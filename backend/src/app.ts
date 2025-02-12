@@ -28,7 +28,7 @@ app.use(cookieParser());
 // import routes and declaratio
 import { routes } from "./core/routes/1index";
 //  use routes
-app.use("/api/v1/heath", routes.healthRoutes);
+app.use("/api/v1/health", routes.healthRoutes);
 app.use("/api/v1/auth", routes.authRoutes);
 app.use("/api/v1/user", routes.userRoutes);
 app.use("/api/v1/session", routes.sessionRoutes);

@@ -1,4 +1,5 @@
 import appAssert from "../../common/API/AppAssert";
+import { passwordHasher } from "../../common/utils/bcryptjs";
 import { Now } from "../../common/utils/customTime";
 import {
   accessTokenSignOptions,
@@ -7,6 +8,7 @@ import {
   verifyToken,
 } from "../../common/utils/jwtHelper";
 import { BAD_REQUEST, UNAUTHORIZED } from "../../constants/http";
+import pool from "../../database/db/dbConnect";
 import Session from "../../database/models/session.model";
 import User from "../../database/models/user.model";
 import { sendWelcomeEmail } from "../../mail/mailer";
@@ -14,25 +16,32 @@ import { sendWelcomeEmail } from "../../mail/mailer";
 type CreateUserData = {
   email: string;
   password: string;
-  username: string;
+  firstName: string;
 };
 
 export const createUserService = async (data: CreateUserData) => {
-  const userExists = await User.exists({ email: data.email });
+  const userExists = await pool.query({
+    text: `SELECT EXISTS (SELECT * FROM tbluser WHERE email =$1)`,
+    values: [data.email],
+  });
+  console.log("exists user", userExists);
 
   appAssert(!userExists, BAD_REQUEST, "user already exists");
 
-  const user = await User.create({
-    user: data.username,
-    email: data.email,
-    password: data.password,
-  });
+  const hashedPassword = await passwordHasher(data.password);
 
+  const user = await pool.query<any>({
+    text:`INSTERT INTO tbluser (first_name,email, password) VALUES ($1, $2 ,$3) RETURNING *`,
+    values: [data.firstName, data.email, hashedPassword],
+  })
+  console.log("created user", user);
+
+  user[0].password = undefined
   // generate welcome email
-  sendWelcomeEmail(data.username, data.email);
+  sendWelcomeEmail(data.firstName, data.email);
 
   return {
-    user: user.publicUser(),
+    user,
   };
 };
 

@@ -1,10 +1,11 @@
 import { app } from "./app";
 import { PORT as PORT_ } from "./constants/getEnv";
-import dbConnect from "./database/db/dbConnect";
+import pool from "./database/db/dbConnect";
 
 const PORT = PORT_ || 5000;
 
-dbConnect()
+pool
+  .connect()
   .then(() => {
     console.log("Database connected successfully");
     app.listen(PORT),
