@@ -1,22 +1,27 @@
-import mongoose from "mongoose";
-import { DATABASE_NAME, MONGO_URI } from "../../constants/getEnv";
+import pkg from "pg";
+import {
+  DB_HOST,
+  DB_NAME,
+  DB_PORT,
+  DB_USER,
+  PASSWORD,
+} from "../../constants/getEnv";
+const { Pool } = pkg;
 
-const dbConnect = async () => {
-  try {
-    const connectionInstance = await mongoose.connect(
-      `${MONGO_URI}/${DATABASE_NAME}`
-    );
-    if (!connectionInstance) {
-      throw new Error("Failed to connect to MongoDB");
-    }
-    console.log(
-      `database connected host: ${connectionInstance.connection.host}`
-    );
-  } catch (error) {
-    console.error("Failed to connect to MongoDB", error);
-    process.exit(1);
-  }
-};
+const pool = new Pool({
+  host: DB_HOST,
+  port: Number.parseInt(DB_PORT),
+  user: DB_USER,
+  password: PASSWORD,
+  database: DB_NAME,
+});
 
+pool.on("error", (err) => {
+  console.error("Error connecting to PostgreSQL database:", err.stack);
+  process.exit(1);
+});
+pool.on("connect", () => {
+  console.log("Connected to PostgreSQL database");
+});
 
-export default dbConnect;
+export default pool;

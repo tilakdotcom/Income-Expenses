@@ -26,17 +26,12 @@ app.use(cors(corsOptions));
 app.use(cookieParser());
 
 // import routes and declaratio
-import healthRoutes from "./core/routes/health.routes";
-import authRoutes from "./core/routes/auth.routes";
-import userRoutes from "./core/routes/user.routes";
-import sessionRoutes from "./core/routes/session.routes";
-
+import { routes } from "./core/routes/1index";
 //  use routes
-app.use("/api/v1/heath", healthRoutes);
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/user", userRoutes);
-app.use("/api/v1/session", sessionRoutes);
-
+app.use("/api/v1/heath", routes.healthRoutes);
+app.use("/api/v1/auth", routes.authRoutes);
+app.use("/api/v1/user", routes.userRoutes);
+app.use("/api/v1/session", routes.sessionRoutes);
 
 app.use(errorHandler);
 
