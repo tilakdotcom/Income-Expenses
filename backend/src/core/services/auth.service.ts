@@ -20,28 +20,28 @@ type CreateUserData = {
 };
 
 export const createUserService = async (data: CreateUserData) => {
-  const userExists = await pool.query({
+  const userExists = await pool.query<any>({
     text: `SELECT EXISTS (SELECT * FROM tbluser WHERE email =$1)`,
     values: [data.email],
   });
-  console.log("exists user", userExists);
+  // console.log("exists user", userExists);
 
-  appAssert(!userExists, BAD_REQUEST, "user already exists");
+  appAssert(!userExists.rows[0].exists, BAD_REQUEST, "user already exists");
 
   const hashedPassword = await passwordHasher(data.password);
 
   const user = await pool.query<any>({
-    text:`INSTERT INTO tbluser (first_name,email, password) VALUES ($1, $2 ,$3) RETURNING *`,
+    text:`INSERT INTO tbluser (first_name,email, password) VALUES ($1, $2 ,$3) RETURNING *`,
     values: [data.firstName, data.email, hashedPassword],
   })
-  console.log("created user", user);
-
-  user[0].password = undefined
+  // console.log("created user", user);
   // generate welcome email
   sendWelcomeEmail(data.firstName, data.email);
 
+  user.rows[0].password = undefined
+
   return {
-    user,
+    user: user.rows[0],
   };
 };
 
