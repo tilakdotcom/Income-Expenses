@@ -1,11 +1,16 @@
 import appAssert from "../../common/API/AppAssert";
 import { emailSchema } from "../../common/schemas/auth";
-import { mongoIdSchema, passwordChangeSchema } from "../../common/schemas/user";
+import {
+  mongoIdSchema,
+  passwordChangeSchema,
+  updateProfileSechma,
+} from "../../common/schemas/user";
 import { BAD_REQUEST, OK } from "../../constants/http";
 import pool from "../../database/db/dbConnect";
 import asyncHandler from "../../middlewares/asyncHandler.middleware";
 import { validateFileImage } from "../../middlewares/file.middleware";
 import {
+  updateProfileService,
   userAvatarService,
   userPasswordChangeService,
   userPasswordResetRequestService,
@@ -40,7 +45,7 @@ export const userResetPasswordHandler = asyncHandler(async (req, res) => {
 });
 
 export const userPasswordChangeHandler = asyncHandler(async (req, res) => {
-  const body = passwordChangeSchema.parse(req.body)
+  const body = passwordChangeSchema.parse(req.body);
 
   const { user } = await userPasswordChangeService({
     oldPassword: body.oldPassword,
@@ -88,6 +93,23 @@ export const userAccessHandler = asyncHandler(async (req, res) => {
   user.password = undefined;
   return res.status(OK).json({
     message: "Access granted",
+    data: user,
+  });
+});
+
+export const updateProfileHandler = asyncHandler(async (req, res) => {
+  const userId = req.userId;
+  const body = updateProfileSechma.parse(req.body);
+  const {user}=await updateProfileService({
+    userId: userId as string,
+    contact: body.contact,
+    country: body.country,
+    currency: body.currency,
+    firstName: body.firstName,
+    lastName: body.lastName,
+  });
+  return res.status(OK).json({
+    message: "Profile updated successfully",
     data: user,
   });
 });

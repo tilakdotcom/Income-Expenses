@@ -152,3 +152,51 @@ export const userVerifyEmailService = async (id: string) => {
 
   return { user: user.publicUser() };
 };
+
+type UpdateProfileServiceType = {
+  userId: string;
+  firstName: string | undefined;
+  lastName: string | undefined;
+  country: string | undefined;
+  currency: string | undefined;
+  contact: string | undefined;
+};
+
+export const updateProfileService = async (
+  data: UpdateProfileServiceType
+) => {
+  const userExists = await pool.query({
+    text: `SELECT * FROM tbluser WHERE id=$1`,
+    values: [data.userId],
+  });
+  const user = userExists.rows[0];
+  appAssert(user, BAD_REQUEST, "Invalid user");
+  const textData =[]
+  if (data.firstName) {
+    textData.push(`first_name='${data.firstName}'`);
+  }
+  if (data.lastName) {
+    textData.push(`last_name='${data.lastName}'`);
+  }
+  if (data.country) {
+    textData.push(`country='${data.country}'`);
+  }
+  if (data.currency) {
+    textData.push(`currency='${data.currency}'`);
+  }
+  if (data.contact) {
+    textData.push(`contact='${data.contact}'`);
+  }
+
+  const queryText =  `UPDATE tbluser SET ${textData.join(" ,")}, updated_at=CURRENT_TIMESTAMP WHERE id=${data.userId} RETURNING *`
+
+  const updatePassword = await pool.query({
+    text:queryText,
+  });
+
+  const updatedUser = updatePassword.rows[0];
+
+  updatedUser.password = undefined;
+
+  return { user: updatePassword.rows[0] };
+};

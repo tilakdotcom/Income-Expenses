@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { userAccessHandler, userPasswordChangeHandler, userProfileImageHandler, userResetPasswordHandler, userVerifyEmailHandler, userVerifyEmailRequestHandler } from "../controllers/user.controller";
+import { updateProfileHandler, userAccessHandler, userPasswordChangeHandler, userProfileImageHandler, userResetPasswordHandler, userVerifyEmailHandler, userVerifyEmailRequestHandler } from "../controllers/user.controller";
 import upload from "../../middlewares/multer.middleware";
 import verifyUser from "../../middlewares/auth.middleware";
 
@@ -19,6 +19,8 @@ router.route("/").get(userAccessHandler)
 router.route("/reset-password").patch(userPasswordChangeHandler)
 
 router.route("/profile").patch(upload.single("avatar"),userProfileImageHandler)
+
+router.route("/update-profile").put(updateProfileHandler)
 
 router.route("/verify-email-request").get(userVerifyEmailRequestHandler)
 

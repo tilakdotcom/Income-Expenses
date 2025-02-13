@@ -25,7 +25,17 @@ export const imageSchema = z.object({
 
 export const mongoIdSchema = z.string().min(4);
 
+
 export const passwordChangeSchema = z.object({
   newPassword: passwordSchema,
   oldPassword: passwordSchema,
 });
+
+
+export const updateProfileSechma = z.object({
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  country: z.string().optional(),
+  currency: z.string().optional(),
+  contact: z.string().optional(),
+})
