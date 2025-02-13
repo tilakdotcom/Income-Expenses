@@ -9,7 +9,7 @@ import uploadFileToCloudinary from "../../common/utils/cloudinary";
 import VerifyCation from "../../database/models/vaerifiacation.model";
 import { verificationCode } from "../../common/enum/verificationCode";
 import { fifteenMinuteFromNow, Now } from "../../common/utils/customTime";
-import { passwordHasher } from "../../common/utils/bcryptjs";
+import { passwordCompare, passwordHasher } from "../../common/utils/bcryptjs";
 import Session from "../../database/models/session.model";
 import ApiError from "../../common/API/ApiError";
 import {
@@ -17,6 +17,7 @@ import {
   sendVerificationEmail,
 } from "../../mail/mailer";
 import { CLIENT_URI } from "../../constants/getEnv";
+import pool from "../../database/db/dbConnect";
 
 type UserAvatar = {
   avatar: string;
@@ -71,39 +72,36 @@ export const userPasswordResetRequestService = async (
 };
 
 type UserPasswordChangeServiceType = {
+  oldPassword: string;
   newPassword: string;
-  passwordResetToken: string;
+  userId: string;
 };
 
 export const userPasswordChangeService = async (
   data: UserPasswordChangeServiceType
 ) => {
-  const verification = await VerifyCation.findOne({
-    _id: data.passwordResetToken,
-    type: verificationCode.PASSWORD_RESET,
-    expiresAt: {
-      $gte: Now(),
-    },
+  const userExists = await pool.query({
+    text: `SELECT * FROM tbluser WHERE id=$1`,
+    values: [data.userId],
   });
-  appAssert(verification, BAD_REQUEST, "reset password has expired");
+  const user = userExists.rows[0];
+  appAssert(user, BAD_REQUEST, "Invalid user");
 
-  const user = await User.findOne({ _id: verification.userId });
-  appAssert(user, INTERNAL_SERVER_ERROR, "reset password failed");
+  const isMatched = await passwordCompare(data.oldPassword, user.password);
 
-  // const hashedPassword = await passwordHasher(data.newPassword);
+  appAssert(isMatched, BAD_REQUEST, "Invalid old password");
+  const hashedPassword = await passwordHasher(data.newPassword);
 
-  user.password = data.newPassword;
-  await user.save();
-
-  //delete old sessions
-  await Session.deleteMany({ userId: user._id });
-
-  await VerifyCation.deleteMany({
-    userId: user._id,
-    type: verificationCode.PASSWORD_RESET,
+  const updatePassword = await pool.query({
+    text: `UPDATE tbluser SET password=$1 WHERE id=$2 RETURNING *`,
+    values: [hashedPassword, data.userId],
   });
 
-  return { user: user.publicUser() };
+  const updatedUser = updatePassword.rows[0];
+
+  updatedUser.password = undefined;
+
+  return { user: updatePassword.rows[0] };
 };
 
 export const userVerifyEmailRequestService = async (userId: string) => {

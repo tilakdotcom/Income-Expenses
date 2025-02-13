@@ -3,7 +3,6 @@ import { emailSchema } from "../../common/schemas/auth";
 import { mongoIdSchema, passwordChangeSchema } from "../../common/schemas/user";
 import { BAD_REQUEST, OK } from "../../constants/http";
 import pool from "../../database/db/dbConnect";
-import User from "../../database/models/user.model";
 import asyncHandler from "../../middlewares/asyncHandler.middleware";
 import { validateFileImage } from "../../middlewares/file.middleware";
 import {
@@ -41,14 +40,12 @@ export const userResetPasswordHandler = asyncHandler(async (req, res) => {
 });
 
 export const userPasswordChangeHandler = asyncHandler(async (req, res) => {
-  const body = passwordChangeSchema.parse({
-    ...req.body,
-    token: req.params.token,
-  });
+  const body = passwordChangeSchema.parse(req.body)
 
   const { user } = await userPasswordChangeService({
+    oldPassword: body.oldPassword,
     newPassword: body.newPassword,
-    passwordResetToken: body.token,
+    userId: req.userId as string,
   });
 
   return res.status(OK).json({
@@ -85,10 +82,10 @@ export const userAccessHandler = asyncHandler(async (req, res) => {
     text: "SELECT * FROM tbluser WHERE id = $1",
     values: [userId],
   });
-  const user = await userExists.rows[0]
+  const user = await userExists.rows[0];
   appAssert(user, BAD_REQUEST, "user not found");
-  
-  user.password = undefined
+
+  user.password = undefined;
   return res.status(OK).json({
     message: "Access granted",
     data: user,

@@ -27,5 +27,5 @@ export const mongoIdSchema = z.string().min(4);
 
 export const passwordChangeSchema = z.object({
   newPassword: passwordSchema,
-  token: mongoIdSchema,
+  oldPassword: passwordSchema,
 });

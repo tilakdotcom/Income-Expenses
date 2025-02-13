@@ -4,7 +4,7 @@ import upload from "../../middlewares/multer.middleware";
 import verifyUser from "../../middlewares/auth.middleware";
 
 const router = Router()
-router.route("/reset-password/:token").patch(userPasswordChangeHandler)
+
 router.route("/forgot-password").post(userResetPasswordHandler)
 
 
@@ -15,6 +15,9 @@ router.use(verifyUser)
 
 router.route("/").get(userAccessHandler)
 // routes
+
+router.route("/reset-password").patch(userPasswordChangeHandler)
+
 router.route("/profile").patch(upload.single("avatar"),userProfileImageHandler)
 
 router.route("/verify-email-request").get(userVerifyEmailRequestHandler)
