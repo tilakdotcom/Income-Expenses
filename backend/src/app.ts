@@ -32,6 +32,7 @@ app.use("/api/v1/health", routes.healthRoutes);
 app.use("/api/v1/auth", routes.authRoutes);
 app.use("/api/v1/user", routes.userRoutes);
 app.use("/api/v1/session", routes.sessionRoutes);
+app.use("/api/v1/account", routes.accountRoutes);
 
 app.use(errorHandler);
 
