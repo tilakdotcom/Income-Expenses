@@ -11,7 +11,7 @@ import asyncHandler from "../../middlewares/asyncHandler.middleware";
 import {
   createUserService,
   loginUserService,
-  refreshTokenService,
+  // refreshTokenService,
 } from "../services/auth.service";
 
 //signup
@@ -34,9 +34,9 @@ export const login = asyncHandler(async (req, res) => {
     userAgent: userAgent,
   });
 
-  const { accessToken, refreshToken, user } = await loginUserService(body);
+  const { accessToken, user } = await loginUserService(body);
 
-  const cooki = setAuthCookies({ res, accessToken, refreshToken });
+  const cooki = setAuthCookies({ res, accessToken });
 
   return cooki.status(OK).json({
     message: "Logged in successfully",
@@ -59,12 +59,12 @@ export const logout = asyncHandler(async (req, res) => {
   });
 });
 
-export const accessTokenRefresh = asyncHandler(async (req, res) => {
-  const refreshToken = req.cookies.refreshToken;
-  appAssert(refreshToken, UNAUTHORIZED, "Refresh token  not found");
-  // userId
-  const { accessToken } = await refreshTokenService(refreshToken);
-  return setAccessTokenCookie({ res, accessToken }).status(OK).json({
-    message: "Access token refreshed successfully",
-  });
-});
+// export const accessTokenRefresh = asyncHandler(async (req, res) => {
+//   const refreshToken = req.cookies.refreshToken;
+//   appAssert(refreshToken, UNAUTHORIZED, "Refresh token  not found");
+//   // userId
+//   const { accessToken } = await refreshTokenService(refreshToken);
+//   return setAccessTokenCookie({ res, accessToken }).status(OK).json({
+//     message: "Access token refreshed successfully",
+//   });
+// });

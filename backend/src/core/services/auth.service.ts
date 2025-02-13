@@ -1,5 +1,5 @@
 import appAssert from "../../common/API/AppAssert";
-import { passwordHasher } from "../../common/utils/bcryptjs";
+import { passwordCompare, passwordHasher } from "../../common/utils/bcryptjs";
 import { Now } from "../../common/utils/customTime";
 import {
   accessTokenSignOptions,
@@ -46,89 +46,76 @@ export const createUserService = async (data: CreateUserData) => {
 };
 
 type LoginUserData = {
-  userAgent?: string;
   email: string;
   password: string;
 };
 
 export const loginUserService = async (data: LoginUserData) => {
-  const user = await User.findOne({ email: data.email });
+
+   const userdb = await pool.query<any>({
+    text: `SELECT * FROM tbluser WHERE email =$1`,
+    values: [data.email],
+  });
 
   //validation
-  appAssert(user, BAD_REQUEST, "invalid login user details");
+  appAssert(userdb, BAD_REQUEST, "invalid login user details");
+
+  const user = userdb.rows[0]
 
   //password check
-  const isMatch = await user.comparePassword(data.password);
+  const isMatch = await passwordCompare(data.password, user?.password)
 
   appAssert(isMatch, BAD_REQUEST, "invalid login user or password details");
 
-  //create session
-  const session = await Session.create({
-    userId: user._id,
-    userAgent: data.userAgent,
-  });
-
-  //generate tokens
-
-  const refreshToken = generateToken(
-    {
-      userId: user._id,
-      sessionId: session._id,
-    },
-    refreshTokenSignOptions
-  );
 
   const accessToken = generateToken(
     {
       userId: user._id,
-      sessionId: session._id,
     },
     accessTokenSignOptions
   );
 
-  session.refreshToken = refreshToken;
-  await session.save({ validateBeforeSave: false });
+
+  user.password = undefined
 
   return {
-    user: user.publicUser(),
+    user,
     accessToken,
-    refreshToken,
-    session,
   };
 };
 
-export const refreshTokenService = async (refreshToken: string) => {
-  const userId = verifyToken({
-    token: refreshToken,
-    options: refreshTokenSignOptions,
-  });
+// export const refreshTokenService = async (refreshToken: string) => {
+//   const userId = verifyToken({
+//     token: refreshToken,
+//     options: refreshTokenSignOptions,
+//   });
 
-  appAssert(userId.userId, UNAUTHORIZED, "invalid  refresh token");
+//   appAssert(userId.userId, UNAUTHORIZED, "invalid  refresh token");
 
-  const session = await Session.findOne({
-    _id: userId.sessionId,
-    refreshToken: refreshToken,
-    expiresAt: {
-      $gte: Now(),
-    },
-  });
+//   const session = await Session.findOne({
+//     _id: userId.sessionId,
+//     refreshToken: refreshToken,
+//     expiresAt: {
+//       $gte: Now(),
+//     },
+//   });
 
-  appAssert(
-    session && session.refreshToken === refreshToken,
-    UNAUTHORIZED,
-    "session not found  in the database or refresh token is invalid"
-  );
+//   appAssert(
+//     session && session.refreshToken === refreshToken,
+//     UNAUTHORIZED,
+//     "session not found  in the database or refresh token is invalid"
+//   );
 
-  const accessToken = generateToken(
-    {
-      userId: session.userId,
-      sessionId: session._id,
-    },
-    accessTokenSignOptions
-  );
+//   const accessToken = generateToken(
+//     {
+//       userId: session.userId,
+//       sessionId: session._id,
+//     },
+//     accessTokenSignOptions
+//   );
 
-  return {
-    accessToken,
-    session,
-  };
-};
+//   return {
+//     accessToken,
+//     session,
+//   };
+// };

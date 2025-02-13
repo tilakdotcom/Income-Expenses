@@ -32,7 +32,6 @@ const verifyUser = asyncHandler(
       );
 
       req.userId = decoded.userId;
-      req.sessionId = decoded.sessionId;
       next();
     } catch (error) {
       console.log("Error in Middleware", error);

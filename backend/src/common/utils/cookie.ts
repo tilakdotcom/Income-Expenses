@@ -4,7 +4,6 @@ import { fifteenMinuteFromNow, thirtyDaysFromNow } from "./customTime";
 type setAuthParams = {
   res: Response;
   accessToken: string;
-  refreshToken: string;
 };
 
 export const REFRESH_PATH = "/api/v1/auth/refresh";
@@ -30,14 +29,8 @@ const refreshTokenCookieOptions = (): CookieOptions => {
   };
 };
 
-export const setAuthCookies = ({
-  res,
-  accessToken,
-  refreshToken,
-}: setAuthParams) => {
-  return res
-    .cookie("accessToken", accessToken, accessTokenCookieOptions())
-    .cookie("refreshToken", refreshToken, refreshTokenCookieOptions());
+export const setAuthCookies = ({ res, accessToken }: setAuthParams) => {
+  return res.cookie("accessToken", accessToken, accessTokenCookieOptions());
 };
 
 export const clearAuthCookie = (res: Response) => {
