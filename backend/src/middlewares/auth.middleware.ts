@@ -24,6 +24,7 @@ const verifyUser = asyncHandler(
 
       //token decode
       const decoded = verifyToken({ token });
+      console.log("token decode", decoded.userId);
       appAssert(
         decoded,
         UNAUTHORIZED,

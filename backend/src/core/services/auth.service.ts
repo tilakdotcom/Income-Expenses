@@ -1,16 +1,11 @@
 import appAssert from "../../common/API/AppAssert";
 import { passwordCompare, passwordHasher } from "../../common/utils/bcryptjs";
-import { Now } from "../../common/utils/customTime";
 import {
   accessTokenSignOptions,
   generateToken,
-  refreshTokenSignOptions,
-  verifyToken,
 } from "../../common/utils/jwtHelper";
-import { BAD_REQUEST, UNAUTHORIZED } from "../../constants/http";
+import { BAD_REQUEST } from "../../constants/http";
 import pool from "../../database/db/dbConnect";
-import Session from "../../database/models/session.model";
-import User from "../../database/models/user.model";
 import { sendWelcomeEmail } from "../../mail/mailer";
 
 type CreateUserData = {
@@ -70,7 +65,7 @@ export const loginUserService = async (data: LoginUserData) => {
 
   const accessToken = generateToken(
     {
-      userId: user._id,
+      userId: user.id,
     },
     accessTokenSignOptions
   );
@@ -83,39 +78,3 @@ export const loginUserService = async (data: LoginUserData) => {
     accessToken,
   };
 };
-
-// export const refreshTokenService = async (refreshToken: string) => {
-//   const userId = verifyToken({
-//     token: refreshToken,
-//     options: refreshTokenSignOptions,
-//   });
-
-//   appAssert(userId.userId, UNAUTHORIZED, "invalid  refresh token");
-
-//   const session = await Session.findOne({
-//     _id: userId.sessionId,
-//     refreshToken: refreshToken,
-//     expiresAt: {
-//       $gte: Now(),
-//     },
-//   });
-
-//   appAssert(
-//     session && session.refreshToken === refreshToken,
-//     UNAUTHORIZED,
-//     "session not found  in the database or refresh token is invalid"
-//   );
-
-//   const accessToken = generateToken(
-//     {
-//       userId: session.userId,
-//       sessionId: session._id,
-//     },
-//     accessTokenSignOptions
-//   );
-
-//   return {
-//     accessToken,
-//     session,
-//   };
-// };

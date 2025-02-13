@@ -6,6 +6,7 @@ import {
   setAuthCookies,
 } from "../../common/utils/cookie";
 import { BAD_REQUEST, CREATED, OK, UNAUTHORIZED } from "../../constants/http";
+import pool from "../../database/db/dbConnect";
 import Session from "../../database/models/session.model";
 import asyncHandler from "../../middlewares/asyncHandler.middleware";
 import {
@@ -28,10 +29,8 @@ export const signup = asyncHandler(async (req, res) => {
 
 //login
 export const login = asyncHandler(async (req, res) => {
-  const userAgent = req.headers["user-agent"]
   const body = loginSchema.parse({
     ...req.body,
-    userAgent: userAgent,
   });
 
   const { accessToken, user } = await loginUserService(body);
@@ -46,13 +45,14 @@ export const login = asyncHandler(async (req, res) => {
 
 //logout
 export const logout = asyncHandler(async (req, res) => {
-  const sessionId = req.sessionId;
-
-  const session = await Session.deleteOne({
-    _id: sessionId,
-  });
-
-  appAssert(session, BAD_REQUEST, "session not found  in the database");
+  console.log("user id is :", req.userId)
+  const userExists = await pool.query({
+    text: `SELECT * FROM tbluser WHERE id = $1`,
+    values: [req.userId],
+  }) 
+  console.log("userExists", userExists)
+  const user = userExists.rows[0]
+  appAssert(user, BAD_REQUEST, "user does not exist");
 
   return clearAuthCookie(res).status(OK).json({
     message: "Logged out successfully",
