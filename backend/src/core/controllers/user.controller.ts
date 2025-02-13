@@ -2,6 +2,7 @@ import appAssert from "../../common/API/AppAssert";
 import { emailSchema } from "../../common/schemas/auth";
 import { mongoIdSchema, passwordChangeSchema } from "../../common/schemas/user";
 import { BAD_REQUEST, OK } from "../../constants/http";
+import pool from "../../database/db/dbConnect";
 import User from "../../database/models/user.model";
 import asyncHandler from "../../middlewares/asyncHandler.middleware";
 import { validateFileImage } from "../../middlewares/file.middleware";
@@ -80,10 +81,16 @@ export const userVerifyEmailHandler = asyncHandler(async (req, res) => {
 
 export const userAccessHandler = asyncHandler(async (req, res) => {
   const userId = req.userId;
-  const user = await User.findOne({ _id: userId });
+  const userExists = await pool.query({
+    text: "SELECT * FROM tbluser WHERE id = $1",
+    values: [userId],
+  });
+  const user = await userExists.rows[0]
   appAssert(user, BAD_REQUEST, "user not found");
+  
+  user.password = undefined
   return res.status(OK).json({
     message: "Access granted",
-    data: user.publicUser(),
+    data: user,
   });
 });

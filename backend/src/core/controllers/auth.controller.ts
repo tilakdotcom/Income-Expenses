@@ -2,17 +2,14 @@ import appAssert from "../../common/API/AppAssert";
 import { loginSchema, registerSchema } from "../../common/schemas/auth";
 import {
   clearAuthCookie,
-  setAccessTokenCookie,
   setAuthCookies,
 } from "../../common/utils/cookie";
-import { BAD_REQUEST, CREATED, OK, UNAUTHORIZED } from "../../constants/http";
+import { BAD_REQUEST, CREATED, OK } from "../../constants/http";
 import pool from "../../database/db/dbConnect";
-import Session from "../../database/models/session.model";
 import asyncHandler from "../../middlewares/asyncHandler.middleware";
 import {
   createUserService,
   loginUserService,
-  // refreshTokenService,
 } from "../services/auth.service";
 
 //signup
@@ -58,13 +55,3 @@ export const logout = asyncHandler(async (req, res) => {
     message: "Logged out successfully",
   });
 });
-
-// export const accessTokenRefresh = asyncHandler(async (req, res) => {
-//   const refreshToken = req.cookies.refreshToken;
-//   appAssert(refreshToken, UNAUTHORIZED, "Refresh token  not found");
-//   // userId
-//   const { accessToken } = await refreshTokenService(refreshToken);
-//   return setAccessTokenCookie({ res, accessToken }).status(OK).json({
-//     message: "Access token refreshed successfully",
-//   });
-// });
