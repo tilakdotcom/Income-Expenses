@@ -20,9 +20,11 @@ export const createAccountService = async (data: createAccountServiceType) => {
   const account = accountExistsResult.rows[0];
   appAssert(!account, BAD_REQUEST, "Account already exists");
 
+  const amount = Number.parseInt(data.amount);
+
   const createAccountQuery = {
     text: `INSERT INTO tblaccount (account_name, user_id, account_balance, account_number) VALUES ($1, $2, $3, $4) RETURNING *`,
-    values: [data.name, data.userId, data.amount, data.accountNumber],
+    values: [data.name, data.userId, amount, data.accountNumber],
   };
 
   const newAccountResult = await pool.query(createAccountQuery);
@@ -31,23 +33,23 @@ export const createAccountService = async (data: createAccountServiceType) => {
   const userAccount = Array.isArray(data.name) ? data.name : [data.name];
 
   const userUpdateQuery = {
-    text: `UPDATE tbluser SET accounts = array_cat(accounts, $1), updated_at=CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
+    text: `UPDATE tbluser SET account = array_cat(account, $1), updated_at=CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
     values: [userAccount, data.userId],
   };
 
   const updateUserResult = await pool.query(userUpdateQuery);
   const updatedUser = updateUserResult.rows[0];
 
-  const description = account.account_name + " (Initail Deposit)";
+  const description = newAccount.account_name + " (Initail Deposit)";
   const initialDepositQuery = {
-    text: `INSERT INTO tbltransaction (user_id, description, status, amount, transaction_type, account_id) VALUES ($1, $2, $3, $4, $5, CURRENT_DATE) RETURNING *`,
+    text: `INSERT INTO tbltransaction (user_id, description, status, amount, transaction_type, account_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
     values: [
       data.userId,
       description,
       "complete",
       data.amount,
       "income",
-      newAccount.account_name,
+      newAccount.id,
     ],
   };
 
@@ -75,16 +77,17 @@ export const addAmountService = async (data: addAmountServiceType) => {
   const accountExistsResult = await pool.query(accountExistsQuery);
   const accountExists = accountExistsResult.rows[0];
   appAssert(accountExists, BAD_REQUEST, "account does not exists");
+  const amount = Number.parseInt(data.amount);
 
   const updateAddAmountQuery = {
-    text: "UPDATE tblaccount SET account_balance=$1 WHERE user_id = $2 AND id =$3 RETURNING *",
-    values: [data.accountId, data.userId, data.accountId],
+    text: "UPDATE tblaccount SET account_balance=(account_balance + $1) WHERE user_id = $2 AND id =$3 RETURNING *",
+    values: [amount, data.userId, data.accountId],
   };
   const updateAddAmountResult = await pool.query(updateAddAmountQuery);
   const updateAddAmount = updateAddAmountResult.rows[0];
   const description = accountExists.account_name + " (Deposit)";
   const newDepositQuery = {
-    text: `INSERT INTO tbltransaction (user_id, description, status, amount, transaction_type, account_id) VALUES ($1, $2, $3, $4, $5, updated_at=CURRENT_TIMESTAMP) RETURNING *`,
+    text: `INSERT INTO tbltransaction (user_id, description, status, amount, transaction_type, account_id) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
     values: [
       data.userId,
       description,
