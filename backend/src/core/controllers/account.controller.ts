@@ -1,9 +1,12 @@
 import appAssert from "../../common/API/AppAssert";
-import { newAccount } from "../../common/schemas/account";
+import { addAmountSchema, newAccount } from "../../common/schemas/account";
 import { BAD_REQUEST, CREATED, OK } from "../../constants/http";
 import pool from "../../database/db/dbConnect";
 import asyncHandler from "../../middlewares/asyncHandler.middleware";
-import { createAccountService } from "../services/account.service";
+import {
+  addAmountService,
+  createAccountService,
+} from "../services/account.service";
 
 export const getAccountHandler = asyncHandler(async (req, res) => {
   const userId = req.userId as string;
@@ -23,7 +26,11 @@ export const getAccountHandler = asyncHandler(async (req, res) => {
 export const createAccountHandler = asyncHandler(async (req, res) => {
   const body = newAccount.parse(req.body);
   const userId = req.userId as string;
-  const { newAccount: newAccountResult, updatedUser } = await createAccountService({
+  const {
+    newAccount: newAccountResult,
+    updatedUser,
+    initialDeposit,
+  } = await createAccountService({
     userId,
     name: body.name,
     amount: body.amount,
@@ -31,9 +38,31 @@ export const createAccountHandler = asyncHandler(async (req, res) => {
   });
   return res.status(CREATED).json({
     message: "Account created successfully",
-    data:{
+    data: {
       newAccount: newAccountResult,
       user: updatedUser,
+      initialDeposit,
+    },
+  });
+});
+
+export const addAmountHandler = asyncHandler(async (req, res) => {
+  const userId = req.userId as string;
+  const accountId = req.params.accountId;
+  const body = addAmountSchema.parse({
+    amount: req.body.amount,
+  });
+  const {newDeposit, updateAddAmount}=await addAmountService({
+    userId,
+    amount: body.amount,
+    accountId,
+  });
+
+  return res.status(OK).json({
+    message: "Amount added successfully",
+    data: {
+      newDeposit,
+      updateAddAmount,
     },
   });
 });
