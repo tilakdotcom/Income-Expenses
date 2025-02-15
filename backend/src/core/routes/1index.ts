@@ -3,6 +3,7 @@ import authRoutes from "./auth.routes";
 import userRoutes from "./user.routes";
 import sessionRoutes from "./session.routes";
 import accountRoutes from "./account.routes";
+import transactionRoutes from "./transaction.routes";
 
 
 export const routes = {
@@ -10,5 +11,6 @@ export const routes = {
   authRoutes,
   userRoutes,
   sessionRoutes,
-  accountRoutes
+  accountRoutes,
+  transactionRoutes
 }
