@@ -64,7 +64,7 @@ type transferMoneyServiceType = {
 
 export const transferMoneyService = async (data: transferMoneyServiceType) => {
   appAssert(
-    Number(data.amount) <= 0,
+    Number(data.amount) > 0,
     BAD_REQUEST,
     "amount must be greater than zero"
   );
@@ -83,10 +83,10 @@ export const transferMoneyService = async (data: transferMoneyServiceType) => {
 
   const fromAccount = fromAccountExistsResult.rows[0];
   const toAccount = toAccountExistsResult.rows[0];
-  appAssert(fromAccount || toAccount, BAD_REQUEST, "Account must exist");
+  appAssert(fromAccount && toAccount, BAD_REQUEST, "Account must exist");
   appAssert(
-    fromAccount.account_balance <= 0 ||
-      fromAccount.account_balance < Number(data.amount),
+    fromAccount.account_balance >= 0 ||
+      fromAccount.account_balance > Number(data.amount),
     BAD_REQUEST,
     "Account balance is out of range"
   );
@@ -101,13 +101,12 @@ export const transferMoneyService = async (data: transferMoneyServiceType) => {
 
   const fromDescription = `${data.amount} (Transfer to ${toAccount.account_name})`;
   const newTransactionFromAccountQuery = {
-    text: `INSERT INTO tbltransaction (account_id, user_id, description, amount, account_id, status,  transaction_type, updated_at=CURRENT_TIMESTAMP) VALUES ($1, $2, $3, $4, $5)`,
+    text: `INSERT INTO tbltransaction (account_id, user_id, description, amount, status,  transaction_type) VALUES ($1, $2, $3, $4, $5 , $6)`,
     values: [
       data.fromAccount,
       data.userId,
       fromDescription,
-      data.amount,
-      fromAccount.id,
+      Number(data.amount),
       "completed",
       "expense",
     ],
@@ -124,13 +123,12 @@ export const transferMoneyService = async (data: transferMoneyServiceType) => {
   const toDescription = `${data.amount} (Received from ${fromAccount.account_name})`;
 
   const newTransactionToAccountQuery = {
-    text: `INSERT INTO tbltransaction (account_id, user_id, description, amount, account_id, status,  transaction_type, updated_at=CURRENT_TIMESTAMP) VALUES ($1, $2, $3, $4, $5)`,
+    text: `INSERT INTO tbltransaction (account_id, user_id, description, amount, status,  transaction_type) VALUES ($1, $2, $3, $4, $5, $6)`,
     values: [
-      data.fromAccount,
+      data.toAccount,
       data.userId,
       toDescription,
       data.amount,
-      fromAccount.id,
       "completed",
       "income",
     ],
