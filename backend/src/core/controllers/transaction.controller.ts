@@ -1,9 +1,9 @@
-import { addTransactionSchema } from "../../common/schemas/transaction";
+import { addTransactionSchema, tranferMoneyFromAccountSchema } from "../../common/schemas/transaction";
 import { sevenDayAgo } from "../../common/utils/customTime";
 import { OK } from "../../constants/http";
 import pool from "../../database/db/dbConnect";
 import asyncHandler from "../../middlewares/asyncHandler.middleware";
-import { addTransactionService } from "../services/transaction.service";
+import { addTransactionService, transferMoneyService } from "../services/transaction.service";
 
 export const getTransactionHandler = asyncHandler(async (req, res) => {
   const userId = req.userId;
@@ -51,4 +51,19 @@ export const addTransactionHandler = asyncHandler(async (req, res) => {
   });
 
   return res.status(OK).json({ message: "Transaction added successfully" });
+});
+
+
+export const transferMoneyHandler = asyncHandler(async (req, res) => {
+  const userId = req.userId as string;
+  const body = tranferMoneyFromAccountSchema.parse(req.body);
+
+  await transferMoneyService({
+    userId,
+    fromAccount: body.fromAccount,
+    toAccount: body.toAccount,
+    amount: body.amount,
+  })
+
+
 });

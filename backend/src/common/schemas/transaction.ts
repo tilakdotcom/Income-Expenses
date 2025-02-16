@@ -5,3 +5,9 @@ export const addTransactionSchema = z.object({
   source: z.string().min(3),
   amount: z.string().min(2),
 });
+
+export const tranferMoneyFromAccountSchema = z.object({
+  fromAccount: z.string().min(3),
+  toAccount: z.string().min(3),
+  amount: z.string().min(2),
+})
