@@ -85,11 +85,7 @@ export const transferMoneyService = async (data: transferMoneyServiceType) => {
 
   const fromAccount = fromAccountExistsResult.rows[0];
   const toAccount = toAccountExistsResult.rows[0];
-  appAssert(
-    fromAccount || toAccount,
-    BAD_REQUEST,
-    "Account must exist"
-  );
+  appAssert(fromAccount || toAccount, BAD_REQUEST, "Account must exist");
   appAssert(
     fromAccount.account_balance <= 0 ||
       fromAccount.account_balance < Number(data.amount),
@@ -145,3 +141,104 @@ export const transferMoneyService = async (data: transferMoneyServiceType) => {
 
   await pool.query("COMMIT");
 };
+
+export const getDashboardService = async (userId: string) => {
+  let totalIncome = 0;
+  let totalExpense = 0;
+  const transactionsQuery = {
+    text: `SELECT SUM(amount) as total_income FROM tbltransaction WHERE user_id=$1 GROUP BY transaction_type`,
+    values: [userId],
+  };
+
+  const transactionsResult = await pool.query(transactionsQuery);
+  const transactions = transactionsResult.rows;
+
+  transactions.forEach((transaction) => {
+    if (transaction.transaction_type === "income") {
+      totalIncome += transaction.total_income;
+    } else {
+      totalExpense += transaction.total_income;
+    }
+  });
+
+  const availableBalance = totalIncome - totalExpense;
+
+  const year = new Date().getFullYear();
+  const startDate = new Date(year, 0, 1);
+  const endDate = new Date(year, 11, 31, 23, 59, 59);
+
+  const resultQuery = {
+    text: `SELECT EXTRACT(MONTH FROM created_at) as month,
+    transaction_type,
+    SUM(amount) as total_amount
+    FROM tbltransaction
+    WHERE user_id=$1 AND created_at BETWEEN $2 AND $3
+    GROUP BY EXTRACT(MONTH FROM created_at), transaction_type
+    `,
+    values: [userId, startDate, endDate],
+  };
+
+  const result = await pool.query(resultQuery);
+
+  //organise Data
+  const data = new Array(12).map((_, index) => {
+    const month = result.rows.filter(
+      (item) => parseInt(item.month) === index + 1
+    );
+
+    const income = month.filter((item) => item.transaction_type === "income");
+    const expense = month.filter((item) => item.transaction_type === "expense");
+    return {
+      month: getMonthNames(index),
+      income: income.reduce((acc, curr) => acc + curr.total_amount, 0),
+      expense: expense.reduce((acc, curr) => acc + curr.total_amount, 0),
+    };
+  });
+
+  const lastTransactionQuery = {
+    text: `SELECT *
+    FROM tbltransaction
+    WHERE user_id=$1 
+    ORDER BY id DESC
+    LIMIT 4`,
+    values: [userId],
+  };
+
+
+  const lastTransactions = await pool.query(lastTransactionQuery);
+
+  const lastActiveAccountQuery = {
+    text: `SELECT * FROM tblaccount WHERE user_id=$1 ORDER BY id DESC LIMIT 4`,
+    values: [userId],
+  }
+  const lastActiveAccounts = await pool.query(lastActiveAccountQuery);
+
+
+
+  return {
+    totalIncome,
+    totalExpense,
+    availableBalance,
+    chartData : data,
+    lastTransactions: lastTransactions.rows,
+    lastActiveAccounts: lastActiveAccounts.rows,
+  };
+};
+
+function getMonthNames(index: number) {
+  const monthNames = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  return monthNames[index];
+}
