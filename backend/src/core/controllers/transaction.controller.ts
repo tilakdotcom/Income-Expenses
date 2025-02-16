@@ -65,5 +65,6 @@ export const transferMoneyHandler = asyncHandler(async (req, res) => {
     amount: body.amount,
   })
 
+  return res.status(OK).json({ message: "Transferred successfully" });
 
 });

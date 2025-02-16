@@ -84,8 +84,9 @@ export const transferMoneyService = async (data: transferMoneyServiceType) => {
   const toAccountExistsResult = await pool.query(toAccountExistsQuery);
 
   const fromAccount = fromAccountExistsResult.rows[0];
+  const toAccount = toAccountExistsResult.rows[0];
   appAssert(
-    fromAccount || toAccountExistsResult,
+    fromAccount || toAccount,
     BAD_REQUEST,
     "Account must exist"
   );
@@ -104,7 +105,7 @@ export const transferMoneyService = async (data: transferMoneyServiceType) => {
   };
   await pool.query(updateFromAccountQuery);
 
-  const fromDescription = `${data.amount} (Transfer to ${data.toAccount})`;
+  const fromDescription = `${data.amount} (Transfer to ${toAccount.account_name})`;
   const newTransactionFromAccountQuery = {
     text: `INSERT INTO tbltransaction (account_id, user_id, description, amount, account_id, status,  transaction_type, updated_at=CURRENT_TIMESTAMP) VALUES ($1, $2, $3, $4, $5)`,
     values: [
@@ -126,7 +127,7 @@ export const transferMoneyService = async (data: transferMoneyServiceType) => {
 
   await pool.query(updateToAccountQuery);
 
-  const toDescription = `${data.amount} (Received from ${data.fromAccount})`;
+  const toDescription = `${data.amount} (Received from ${fromAccount.account_name})`;
 
   const newTransactionToAccountQuery = {
     text: `INSERT INTO tbltransaction (account_id, user_id, description, amount, account_id, status,  transaction_type, updated_at=CURRENT_TIMESTAMP) VALUES ($1, $2, $3, $4, $5)`,
