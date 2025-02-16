@@ -6,7 +6,6 @@ type addTransactionServiceType = {
   userId: String;
   accountId: String;
   description: String;
-  source: String;
   amount: String;
 };
 
@@ -14,7 +13,7 @@ export const addTransactionService = async (
   data: addTransactionServiceType
 ) => {
   appAssert(
-    Number(data.amount) <= 0,
+    Number(data.amount) >= 0,
     BAD_REQUEST,
     "amount must be greater than zero"
   );
@@ -26,8 +25,8 @@ export const addTransactionService = async (
   const account = accountExistsResult.rows[0];
   appAssert(account, BAD_REQUEST, "Account must exist");
   appAssert(
-    account.account_balance <= 0 ||
-      account.account_balance < Number(data.amount),
+    account.account_balance > 0 ||
+      account.account_balance >= Number(data.amount),
     BAD_REQUEST,
     "Insufficient Amount to add transaction"
   );
@@ -35,19 +34,18 @@ export const addTransactionService = async (
   await pool.query("BEGIN");
 
   const updateAccountQuery = {
-    text: `UPDATE tblaccount SET account_balance = account_balance - $1 WHERE id=$2 AND user_id = $3`,
+    text: `UPDATE tblaccount SET account_balance=account_balance - $1 WHERE id=$2 AND user_id=$3`,
     values: [data.amount, data.accountId, data.userId],
   };
   await pool.query(updateAccountQuery);
-  const description = `${data.description} (Transfer from ${data.source})`;
+  const description = `${data.description} (Transfer from ${account.account_name})`;
   const createTransactionQuery = {
-    text: `INSERT INTO tbltransaction (account_id, user_id, description, amount, account_id, status,  transaction_type, updated_at=CURRENT_TIMESTAMP) VALUES ($1, $2, $3, $4, $5)`,
+    text: `INSERT INTO tbltransaction (account_id, user_id, description, amount, status,  transaction_type) VALUES ($1, $2, $3, $4, $5, $6)`,
     values: [
       data.accountId,
       data.userId,
       description,
-      data.amount,
-      account.id,
+      Number(data.amount),
       "completed",
       "expense",
     ],

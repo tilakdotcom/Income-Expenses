@@ -53,7 +53,6 @@ export const addTransactionHandler = asyncHandler(async (req, res) => {
     userId,
     accountId,
     description: body.description,
-    source: body.source,
     amount: body.amount,
   });
 
