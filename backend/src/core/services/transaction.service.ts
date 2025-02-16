@@ -142,7 +142,7 @@ export const getDashboardService = async (userId: string) => {
   let totalIncome = 0;
   let totalExpense = 0;
   const transactionsQuery = {
-    text: `SELECT SUM(amount) as total_income FROM tbltransaction WHERE user_id=$1 GROUP BY transaction_type`,
+    text: `SELECT transaction_type,SUM(amount) as total_income FROM tbltransaction WHERE user_id=$1 GROUP BY transaction_type`,
     values: [userId],
   };
 
@@ -151,9 +151,9 @@ export const getDashboardService = async (userId: string) => {
 
   transactions.forEach((transaction) => {
     if (transaction.transaction_type === "income") {
-      totalIncome += transaction.total_income;
-    } else {
-      totalExpense += transaction.total_income;
+      totalIncome += Number(transaction.total_income);
+    } else if (transaction.transaction_type === "expense") {
+      totalExpense += Number(transaction.total_income);
     }
   });
 
@@ -177,17 +177,18 @@ export const getDashboardService = async (userId: string) => {
   const result = await pool.query(resultQuery);
 
   //organise Data
-  const data = new Array(12).map((_, index) => {
+  const data = Array.from({ length: 12 }, (_, index) => {
     const month = result.rows.filter(
       (item) => parseInt(item.month) === index + 1
     );
-
+  
     const income = month.filter((item) => item.transaction_type === "income");
     const expense = month.filter((item) => item.transaction_type === "expense");
+  
     return {
-      month: getMonthNames(index),
-      income: income.reduce((acc, curr) => acc + curr.total_amount, 0),
-      expense: expense.reduce((acc, curr) => acc + curr.total_amount, 0),
+      month: getMonthNames(index), // Convert month index to name (e.g., January, February)
+      income: income.reduce((acc, curr) => acc + Number(curr.total_amount), 0),
+      expense: expense.reduce((acc, curr) => acc + Number(curr.total_amount), 0),
     };
   });
 
