@@ -1,7 +1,9 @@
+import { addTransactionSchema } from "../../common/schemas/transaction";
 import { sevenDayAgo } from "../../common/utils/customTime";
 import { OK } from "../../constants/http";
 import pool from "../../database/db/dbConnect";
 import asyncHandler from "../../middlewares/asyncHandler.middleware";
+import { addTransactionService } from "../services/transaction.service";
 
 export const getTransactionHandler = asyncHandler(async (req, res) => {
   const userId = req.userId;
@@ -33,4 +35,20 @@ export const getTransactionHandler = asyncHandler(async (req, res) => {
     data: getTransactionsResult.rows,
     totalCount: getTransactionsResult.rowCount,
   });
+});
+
+export const addTransactionHandler = asyncHandler(async (req, res) => {
+  const body = addTransactionSchema.parse(req.body);
+  const userId = req.userId as string;
+  const accountId = req.params.accountId as string;
+
+  await addTransactionService({
+    userId,
+    accountId,
+    description: body.description,
+    source: body.source,
+    amount: body.amount,
+  });
+
+  return res.status(OK).json({ message: "Transaction added successfully" });
 });
